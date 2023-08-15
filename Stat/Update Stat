@@ -1,0 +1,16 @@
+---gives you tables that need full update\
+
+select   
+  'update statistics ' + QUOTENAME(OBJECT_SCHEMA_NAME(obj.object_id)) + '.' + QUOTENAME(OBJECT_NAME(obj.object_id)) + ' ' +  QUOTENAME(stat.name) + ' with FULLSCAN , PERSIST_SAMPLE_PERCENT = ON'  
+
+--SELECT obj.name, obj.object_id, stat.name, stat.stats_id, last_updated, modification_counter  
+FROM sys.objects AS obj   
+INNER JOIN sys.stats AS stat ON stat.object_id = obj.object_id  
+CROSS APPLY sys.dm_db_stats_properties(stat.object_id, stat.stats_id) AS sp  
+
+where
+obj.type ='U'
+and(
+  sp.rows_sampled < sp.rows or   
+  (CONVERT(float,sp.modification_counter)/CONVERT(float,sp.rows)*100) >= 5.00)   -- 5% change  
+ order by 1 
