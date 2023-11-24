@@ -1,0 +1,18 @@
+---NonClustered index
+CREATE NONCLUSTERED INDEX [NCI_Spid_Blocked] ON [dbo].[tbl_blocking_details]
+(
+	[date] ASC
+)
+INCLUDE([spid],[blockingspid]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, FILLFACTOR = 90, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+GO
+
+--Primary Key
+ ALTER TABLE [dbo].[tbl_blockers]
+   ADD CONSTRAINT PK_Date PRIMARY KEY CLUSTERED (date);
+
+--Change column from Null to NotNull
+   ALTER TABLE [dbo].[tbl_blockers]
+Alter COLUMN [date] VARCHAR(50) not null;
+
+--Drop index
+drop index [NCI_Date_Spid_Blocked] on [dbo].[tbl_blockers]
