@@ -1,0 +1,22 @@
+--composite index
+e.g. create compositeindexfname_email
+      on person.contact (firstname, emailpromotion)
+
+Note: order of columns matter in the above. For instance, your query has a filter as follows
+
+where firstname like 'L%'
+and emailpromotion =1 
+and contactID < 10000
+
+this query will benefit from another composite index than the above
+create compositeindexemail_fname
+      on person.contact (emailpromotion, firstname)
+because it can get email promtion that are 1 and easily "seek" on first name. 
+
+but if we use the first index (firstname, emailpromotion) it will start by seeking firstname, then cant do seek on emailpromotion since it is =1. 
+
+--to check indexes on a table
+USE AdventureWorks2014;  
+GO  
+EXEC sp_helpindex N'person.contact';  
+GO
