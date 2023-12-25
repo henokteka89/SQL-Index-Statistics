@@ -11,9 +11,12 @@ and contactID < 10000
 this query will benefit from another composite index than the above
 create compositeindexemail_fname
       on person.contact (emailpromotion, firstname)
-because it can get email promtion that are 1 and easily "seek" on first name. 
+
+because it can get email promotions that are 1 and easily "seek" on first name. 
 
 but if we use the first index (firstname, emailpromotion) it will start by seeking firstname, then cant do seek on emailpromotion since it is =1. 
+
+the first is partially seekable, the latter is fully seekable. 
 
 --to check indexes on a table
 USE AdventureWorks2014;  
