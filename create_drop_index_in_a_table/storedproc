@@ -1,0 +1,96 @@
+use DBNAME_Here
+go 
+
+
+Create or Alter Procedure sp_createdropindex_final
+
+( 
+
+  @TableName NVARCHAR(128) ,
+  @SchemaName NVARCHAR(128) = 'dbo' )
+
+AS
+
+Declare @CreateDropStatement Table (Create_Index_Statement NVARCHAR(MAX) , Drop_Index_Statement NVARCHAR(MAX) )
+
+Insert into @CreateDropStatement
+
+SELECT
+    'CREATE ' +
+    CASE WHEN SI.is_unique = 1 THEN 'UNIQUE ' ELSE '' END +
+    SI.type_desc + ' INDEX ' + QUOTENAME(SI.name) +
+    ' ON ' + QUOTENAME(S.name) + '.' + QUOTENAME(T.name) +
+    ' (' + 
+    STUFF(
+        (
+            SELECT ', ' + QUOTENAME(C.name) + 
+                CASE WHEN IC.is_descending_key = 1 THEN ' DESC' ELSE ' ASC' END
+            FROM sys.index_columns IC
+            INNER JOIN sys.columns C ON IC.object_id = C.object_id AND IC.column_id = C.column_id
+            WHERE IC.object_id = SI.object_id AND IC.index_id = SI.index_id
+            ORDER BY IC.key_ordinal
+            FOR XML PATH(''), TYPE
+        ).value('.', 'NVARCHAR(MAX)') COLLATE DATABASE_DEFAULT
+        , 1, 2, ''
+    ) + ')' +
+    CASE WHEN SI.type_desc = 'NONCLUSTERED' THEN 
+        ISNULL(' INCLUDE (' + 
+        STUFF(
+            (
+                SELECT ', ' + QUOTENAME(C.name)
+                FROM sys.index_columns IC
+                INNER JOIN sys.columns C ON IC.object_id = C.object_id AND IC.column_id = C.column_id
+                WHERE IC.object_id = SI.object_id AND IC.index_id = SI.index_id AND IC.is_included_column = 1
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)') COLLATE DATABASE_DEFAULT
+            , 1, 2, ''
+        ) + ')', '') 
+    ELSE '' END +
+    CASE WHEN SI.has_filter = 1 THEN ' WHERE ' + SI.filter_definition ELSE '' END + ';' As Create_Index_Statement
+	,'DROP INDEX ' + QUOTENAME(SI.name) + ' ON ' + QUOTENAME(S.name) + '.' + QUOTENAME(T.name) + ';' As Drop_Index_Statement
+FROM
+    sys.indexes SI
+INNER JOIN
+    sys.tables T ON SI.object_id = T.object_id
+INNER JOIN
+    sys.schemas S ON T.schema_id = S.schema_id
+WHERE
+    T.name = @TableName COLLATE DATABASE_DEFAULT
+    AND S.name = @SchemaName COLLATE DATABASE_DEFAULT
+    AND SI.type_desc IN ('CLUSTERED', 'NONCLUSTERED')
+ORDER BY
+    SI.type_desc, SI.name;
+
+ ------------------------------
+ ------------------------------
+ ---Create Table if it doesnt exist
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'CreateDropRecord' AND schema_id = SCHEMA_ID('dbo'))
+BEGIN
+    CREATE TABLE admin.dbo.CreateDropRecord (
+	DatabaseName NVARCHAR(128),
+        TableName NVARCHAR(128),
+        CreateIndexStatement NVARCHAR(MAX),
+        DropIndexStatement NVARCHAR(MAX),
+        GeneratedDateTime DATETIME DEFAULT GETDATE()
+    );
+END
+
+-----
+-----
+---- insert into this table
+
+insert into admin.dbo.CreateDropRecord (DatabaseName, TableName, CreateIndexStatement, DropIndexStatement)
+select DB_NAME() AS DatabaseName, @TableName, Create_Index_Statement, Drop_Index_Statement
+from @CreateDropStatement
+
+---- Check what was inserted.
+
+select * from admin.dbo.CreateDropRecord
+
+--- Cleanup
+
+/*
+DELETE FROM admin.dbo.CreateDropRecord 
+WHERE GeneratedDateTime < DATEADD(month, -1, GETDATE());
+*/
