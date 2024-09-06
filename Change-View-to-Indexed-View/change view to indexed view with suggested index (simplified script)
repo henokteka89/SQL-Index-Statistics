@@ -1,0 +1,77 @@
+--CREATE PROCEDURE dbo.GenerateIndexedViewScript
+    Declare @ViewName NVARCHAR(128) = 'UserStats'           -- Name of the view to convert
+    Declare @DatabaseName NVARCHAR(128) = NULL  -- Optional: Database name, defaults to the current database
+--AS
+--BEGIN
+    SET NOCOUNT ON;
+
+    -- Step 1: Set the database context if the DatabaseName is provided
+    IF @DatabaseName IS NOT NULL
+    BEGIN
+        DECLARE @sql NVARCHAR(MAX);
+        SET @sql = N'USE ' + QUOTENAME(@DatabaseName) + N';';
+        PRINT @sql;
+    END
+
+    -- Step 2: Fetch the original view definition
+    DECLARE @ViewDefinition NVARCHAR(MAX);
+    SELECT @ViewDefinition = definition
+    FROM sys.sql_modules AS m
+    JOIN sys.views AS v ON m.object_id = v.object_id
+    WHERE v.name = @ViewName;
+
+    -- If the view doesn't exist, return an error
+    IF @ViewDefinition IS NULL
+    BEGIN
+        PRINT 'View does not exist';
+        RETURN;
+    END
+
+    -- Step 3: Modify the view definition to add WITH SCHEMABINDING
+    -- Replace 'CREATE VIEW' with 'ALTER VIEW' and add WITH SCHEMABINDING
+    SET @ViewDefinition = REPLACE(@ViewDefinition, 'CREATE VIEW', 'ALTER VIEW');
+    
+    -- Add WITH SCHEMABINDING if it's not already present
+    IF CHARINDEX('WITH SCHEMABINDING', @ViewDefinition) = 0
+    BEGIN
+        -- Insert WITH SCHEMABINDING immediately after the view name
+        SET @ViewDefinition = STUFF(@ViewDefinition, CHARINDEX('AS', @ViewDefinition), 0, 'WITH SCHEMABINDING ');
+    END
+
+    -- Print the modified ALTER VIEW statement
+    PRINT '--- ALTER VIEW Statement ---';
+    PRINT @ViewDefinition;
+
+    -- Step 4: Generate the index creation statement
+    DECLARE @IndexName NVARCHAR(128);
+    SET @IndexName = 'IX_' + @ViewName + '_Indexed';
+
+    -- For simplicity, assume the first column in the SELECT statement can be used for the index
+    DECLARE @FirstColumn NVARCHAR(128);
+    SELECT TOP 1 @FirstColumn = col.name
+    FROM sys.columns AS col
+    JOIN sys.views AS v ON col.object_id = v.object_id
+    WHERE v.name = @ViewName;
+
+    -- If no suitable column is found, return an error
+    IF @FirstColumn IS NULL
+    BEGIN
+        PRINT 'No suitable column found for the index';
+        RETURN;
+    END
+
+    -- Generate the index creation statement
+    DECLARE @CreateIndex NVARCHAR(MAX);
+    SET @CreateIndex = N'CREATE UNIQUE CLUSTERED INDEX ' + QUOTENAME(@IndexName) + 
+                       N' ON ' + QUOTENAME(@ViewName) + 
+                       N' (' + QUOTENAME(@FirstColumn) + N');';
+
+    -- Print the index creation statement
+    PRINT '--- CREATE INDEX Statement ---';
+    PRINT @CreateIndex;
+
+    -- Step 5: Print the verification query
+    PRINT '--- Verification Query ---';
+    PRINT N'SELECT name, type_desc FROM sys.indexes WHERE object_id = OBJECT_ID(''' + @ViewName + ''') AND name = ''' + @IndexName + ''';';
+--END;
+--GO
