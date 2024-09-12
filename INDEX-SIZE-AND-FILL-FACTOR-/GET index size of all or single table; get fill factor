@@ -33,5 +33,14 @@ AND I.IS_DISABLED = 0 AND I.IS_HYPOTHETICAL = 0;
 -- TO GET SINGLE INDEX'S FILL_FACTOR AND SIZE BLEND THE ABOVE TWO 
 --ADD , 8 * SUM(A.USED_PAGES) / 1024 AS 'INDEXSIZE(GB)' ; THE TWO JOINS (SYS.PARTITION AND ALLOCATION_UNITS); FILTER IN THE WHERE I.NAME LIKE 'INDEXNAME'; ADD IS_DISABLED AND IS_HYPOTHETICAL; GROUP BYL ALL 4 COLUMNS
 
+SELECT 
+  OBJECT_NAME(I.OBJECT_ID) AS TABLENAME
+, I.NAME AS INDEXNAME, I.INDEX_ID AS INDEXID, p.partition_number
+,p.data_compression_desc as CompressionType
+from sys.partitions as p
+join sys.indexes as i on p.object_id = i.object_id and p.index_id = i.index_id
+where p.data_compression <> 0
+order by tablename, indexname
+
 -- CHECKING HOW MUCH SPACE CAN BE SAVED IF COMPRESSION IS APPLIED TO AN INDEX/PAGE
 EXEC sp_estimate_data_compression_savings 'DBO', 'MYTABLENAME', NULL, NULL, 'PAGE'
