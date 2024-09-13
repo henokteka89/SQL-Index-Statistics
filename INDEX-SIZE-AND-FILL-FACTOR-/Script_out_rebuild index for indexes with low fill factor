@@ -1,0 +1,40 @@
+--- Designed to provide you a script to run to fix low fill_factor. You can adjust the fill factor and add more to the alter index script to include
+-- sort_in_tempdb, compression etc if necessary. 
+
+DECLARE @sql NVARCHAR(MAX);
+DECLARE @tablename NVARCHAR(100);
+DECLARE @indexname NVARCHAR(100);
+DECLARE @fill_factor INT;
+SET NOCOUNT ON;
+
+-- Create a temporary table to store the indexes
+DECLARE @indexcursortbl TABLE (tablename NVARCHAR(100), indexname NVARCHAR(100), fill_factor INT);
+
+-- Insert the indexes that need to be rebuilt into the temporary table
+INSERT INTO @indexcursortbl
+SELECT t.name AS tablename, i.name AS indexname, i.fill_factor
+FROM sys.indexes i
+JOIN sys.tables t ON t.object_id = i.object_id
+WHERE i.fill_factor < 80 AND i.fill_factor <> 0
+AND i.is_disabled = 0 AND i.is_hypothetical = 0;
+
+-- Loop through the temporary table and rebuild each index
+WHILE EXISTS (SELECT 1 FROM @indexcursortbl)
+BEGIN
+    -- Get the next index to rebuild
+    SELECT TOP 1
+        @tablename = tablename,
+        @indexname = indexname,
+        @fill_factor = fill_factor
+    FROM @indexcursortbl;
+
+    -- Construct the ALTER INDEX statement
+    SET @sql = 'ALTER INDEX ' + @indexname + ' ON dbo.' + @tablename + ' REBUILD WITH (FILLFACTOR = 90, ONLINE = ON);';
+    PRINT @sql;
+    -- EXEC sp_executesql @sql; -- Uncomment this line to execute the statement
+
+    -- Remove the processed row from the temporary table
+    DELETE FROM @indexcursortbl
+    WHERE tablename = @tablename AND indexname = @indexname;
+END
+SET NOCOUNT OFF;
