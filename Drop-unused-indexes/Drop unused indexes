@@ -1,1 +1,8 @@
+Use Databasename; --the database you want to analyze
+Go 
+
+Exec admin..spblitzindex @databasename = 'thedatabaseabove' , @mode = 4
+
+
+For more:
 https://flxsql.com/2024/07/29/regex-for-index-management/?trk=feed_main-feed-card_feed-article-content
