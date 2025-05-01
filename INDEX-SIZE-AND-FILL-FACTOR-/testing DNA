@@ -1,3 +1,5 @@
+https://github.com/rrc012/SQL-Snippets/blob/f0b1d98300572aed6e8f04e48b3345eb7f094ff7/Useful%20T-SQL%20Scripts/GUID%20Tests%20for%20BA%231/Run%20Tests%20010%20-%20Best%20Practices%20Weekly.sql
+
 Declare @pObjectID int = object_id ('person.person')
    ,   @pIndexID int = (SELECT index_id FROM sys.indexes WHERE  name /*(indexname)*/ = 'IX_Person_LastName_FirstName_MiddleName' --and /*(tablename)*/OBJECT_NAME(object_id) = 'person'
    );select @pIndexID
