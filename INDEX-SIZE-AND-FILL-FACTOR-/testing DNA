@@ -1,0 +1,4 @@
+Declare @pObjectID int = object_id ('person.person')
+   ,   @pIndexID int = (SELECT index_id FROM sys.indexes WHERE  name /*(indexname)*/ = 'IX_Person_LastName_FirstName_MiddleName' --and /*(tablename)*/OBJECT_NAME(object_id) = 'person'
+   );select @pIndexID
+      EXEC dbo.sp_IndexDNA @pObjectID,@pIndexID
