@@ -1,0 +1,19 @@
+--For specific table include object_id ('order')...for all the tables put NULL in that
+--sys.dm_db_index_physical_stats(DB_ID(), OBJECT_ID('Order Details'), NULL, NULL, 'LIMITED') AS ips --Single Table
+--sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'LIMITED') AS ips
+
+USE DBNAMEHERE
+GO
+SELECT 
+    OBJECT_NAME(ips.object_id) AS TableName,
+    i.name AS IndexName,
+    ips.index_id,
+    ips.index_type_desc AS TypeDesc,
+    ips.avg_fragmentation_in_percent,
+    ips.page_count
+FROM sys.dm_db_index_physical_stats(DB_ID(), OBJECT_ID('Order Details'), NULL, NULL, 'LIMITED') AS ips
+INNER JOIN sys.indexes AS i
+    ON ips.object_id = i.object_id
+    AND ips.index_id = i.index_id
+WHERE ips.database_id = DB_ID()
+ORDER BY ips.avg_fragmentation_in_percent DESC;
