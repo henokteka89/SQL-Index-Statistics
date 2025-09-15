@@ -9,7 +9,7 @@ SELECT
     i.name AS IndexName,
     ips.index_id,
     ips.index_type_desc AS TypeDesc,
-    ips.avg_fragmentation_in_percent,
+    CAST (ips.avg_fragmentation_in_percent AS DECIMAL(10,0)) Avg_frag_perc,
     ips.page_count
 FROM sys.dm_db_index_physical_stats(DB_ID(), OBJECT_ID('Order Details'), NULL, NULL, 'LIMITED') AS ips
 INNER JOIN sys.indexes AS i
