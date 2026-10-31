@@ -1,0 +1,13 @@
+use databasename;
+-- Page compression
+ALTER INDEX IX_Sales_OrderDate ON Sales
+REBUILD
+WITH (DATA_COMPRESSION = PAGE);
+
+-- Row compression
+ALTER INDEX ALL ON [YourTableName]
+REBUILD
+WITH (DATA_COMPRESSION = PAGE); -- or ROW for row-level compression
+
+-- for Table compression
+Right click on the table === go to "storage" === go to "manage compression" == script it out and run.
