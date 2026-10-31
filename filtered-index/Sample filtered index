@@ -1,0 +1,13 @@
+/*
+A filtered index example
+
+create index
+pall_mall
+on dbo.users
+(
+upvotes,
+downvotes
+)
+where reputation >= 100000
+with (sort_in_tempdb = on, Data_compression = page);
+/*
