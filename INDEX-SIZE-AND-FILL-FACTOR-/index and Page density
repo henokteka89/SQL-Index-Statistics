@@ -1,0 +1,13 @@
+SELECT 
+    OBJECT_NAME(ps.object_id) AS TableName,
+    i.name AS IndexName,
+    ps.index_type_desc,
+    ps.avg_page_space_used_in_percent,
+    ps.avg_fragmentation_in_percent,
+    ps.page_count
+FROM sys.dm_db_index_physical_stats(DB_ID(), NULL, NULL, NULL, 'SAMPLED') AS ps
+JOIN sys.indexes AS i
+    ON ps.object_id = i.object_id AND ps.index_id = i.index_id
+WHERE ps.database_id = DB_ID()
+  AND ps.page_count > 100 -- avoid tiny indexes
+ORDER BY ps.avg_page_space_used_in_percent ASC;
