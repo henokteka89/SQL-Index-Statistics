@@ -1,0 +1,19 @@
+
+
+DECLARE @TableName NVARCHAR(128) = 'YourTableName' -- Replace with your table name
+DECLARE @SchemaName NVARCHAR(128) = 'dbo' -- Replace with your schema name if different
+
+SELECT
+    'DROP INDEX ' + QUOTENAME(SI.name) + ' ON ' + QUOTENAME(S.name) + '.' + QUOTENAME(T.name) + ';'
+FROM
+    sys.indexes SI
+INNER JOIN
+    sys.tables T ON SI.object_id = T.object_id
+INNER JOIN
+    sys.schemas S ON T.schema_id = S.schema_id
+WHERE
+    T.name = @TableName COLLATE DATABASE_DEFAULT
+    AND S.name = @SchemaName COLLATE DATABASE_DEFAULT
+    AND SI.type_desc IN ('CLUSTERED', 'NONCLUSTERED')
+ORDER BY
+    SI.type_desc, SI.name;
