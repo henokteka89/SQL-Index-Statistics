@@ -1,0 +1,41 @@
+USE StackOverflow2013; -- Replace with your database name
+GO
+
+WITH MaxDataTypeColumns AS (
+    SELECT 
+        t.name AS TableName,
+        c.name AS ColumnName,
+        TYPE_NAME(c.system_type_id) AS DataType,
+        c.max_length,
+        i.name AS IndexName,
+        CASE 
+            WHEN ic.key_ordinal = 0 THEN 'Included in Index'
+            WHEN ic.key_ordinal > 0 THEN 'Part of Index Key'
+            ELSE 'Not Indexed'
+        END AS IndexType,
+        i.is_unique,
+        i.is_primary_key
+    FROM 
+        sys.tables t
+    INNER JOIN 
+        sys.columns c ON t.object_id = c.object_id
+    LEFT JOIN 
+        sys.index_columns ic ON c.column_id = ic.column_id AND t.object_id = ic.object_id
+    LEFT JOIN 
+        sys.indexes i ON ic.object_id = i.object_id AND ic.index_id = i.index_id
+    WHERE 
+        c.max_length = -1 -- Identifies MAX data types (e.g., VARCHAR(MAX), NVARCHAR(MAX), VARBINARY(MAX))
+)
+SELECT 
+    TableName,
+    ColumnName,
+    DataType,
+    IndexName,
+    IndexType,
+    is_primary_key AS IsPrimaryKey,
+    is_unique AS IsUnique
+FROM 
+    MaxDataTypeColumns
+where indexname is not null  --Comment out if you want to check MAX columns without INDEX
+ORDER BY 
+    TableName, ColumnName;
