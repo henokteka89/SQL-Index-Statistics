@@ -1,0 +1,11 @@
+EXECUTE DBAUtil.dbo.IndexOptimize
+@Databases = 'USER_DATABASES,-DBAUtil',
+@FragmentationLow = NULL,
+@FragmentationMedium = NULL,
+@FragmentationHigh = NULL,
+@UpdateStatistics = 'INDEX',
+--@OnlyModifiedStatistics = 'Y',
+@StatisticsModificationLevel = 3,
+@StatisticsSample = 5,
+@MaxDOP = 2,
+@LogToTable = 'Y'

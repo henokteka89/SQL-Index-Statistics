@@ -1,0 +1,35 @@
+/*
+--@execute = 'N' No execution - to check what it is going to run
+exec admin.dbo.IndexOptimize
+@databases = 'adventureworks2022'
+, @logtotable = 'Y'
+, @execute = 'N'
+--Add the below to check if rebuild is needed
+, @updatestatistics = 'ALL'
+, @onlymodifiedstatistics = 'Y'
+
+*/
+/*
+--Statistics only
+exec admin.dbo.IndexOptimize
+@databases = 'adventureworks2022'
+, @logtotable = 'Y'
+, @execute = 'N'
+, @FragmentationMedium = null
+, @FragmentationHigh = null
+, @updatestatistics = 'ALL'
+, @onlymodifiedstatistics = 'Y'
+*/
+/*
+--Defragmentation only (reorg or rebuil)
+exec admin.dbo.IndexOptimize
+@databases = 'adventureworks2022'
+, @logtotable = 'Y'
+, @execute = 'N'
+, @updatestatistics = NULL
+*/
+
+--- Use @timelimit to limit the time the maintenance job
+--runs but this will not stop a job that is already running.
+--Kill job can be implemented in such scenario.
+--Priority: check the timing of defrag and update stat. Prioritize running update stat. 
